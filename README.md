@@ -31,3 +31,7 @@ Push this project to GitHub, open the **Actions** tab, select **Build Nature Run
 ## COROS sync architecture
 
 The chat connector successfully returned the current COROS snapshot, but connector credentials must not be embedded in an APK. Use a small authenticated backend (or your own server) that calls COROS, normalizes the response to `CorosSnapshot`, and let the Android app fetch only that normalized JSON. Replace `DemoCorosRepository` with that network implementation, then refresh the widget through WorkManager.
+
+## Cloudflare Worker
+
+The `cloudflare/` folder contains the secure API layer. From that folder run `npm install`, `npx wrangler login`, `npx wrangler secret put COROS_API_BASE`, `npx wrangler secret put COROS_ACCESS_TOKEN`, then `npx wrangler deploy`. The Android app should call `GET /api/coros/summary`; the COROS token stays in Cloudflare and never ships in the APK.
