@@ -1,0 +1,37 @@
+package com.naturerun.launcher
+
+import android.content.pm.PackageManager
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+private val Paper = Color(0xFFFFFFFF); private val Ink = Color(0xFF31483D); private val Green = Color(0xFF789D88); private val Pale = Color(0xFFF2F7F2)
+data class AppEntry(val label: String, val packageName: String)
+
+class MainActivity : ComponentActivity() { override fun onCreate(state: Bundle?) { super.onCreate(state); setContent { NatureRunApp() } } }
+
+@Composable fun NatureRunApp() { var page by remember { mutableStateOf("home") }; MaterialTheme(colorScheme = lightColorScheme(primary = Green, background = Paper)) { Surface(color = Paper) { Column(Modifier.fillMaxSize().padding(horizontal = 22.dp)) { Header { page = "home" }; when (page) { "drawer" -> AppDrawer { page = "home" }; "dashboard" -> Dashboard { page = "home" }; "settings" -> SettingsScreen { page = "home" }; else -> HomeScreen({ page = "dashboard" }, { page = "drawer" }, { page = "settings" }) } } } } }
+@Composable private fun Header(home: () -> Unit) { Row(Modifier.fillMaxWidth().padding(top = 20.dp), Arrangement.SpaceBetween, Alignment.CenterVertically) { Text("nature/run", Modifier.clickable { home() }, fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Ink); Text("○  ◔  ▰", color = Green, fontSize = 13.sp) } }
+@Composable private fun HomeScreen(openDashboard: () -> Unit, openDrawer: () -> Unit, openSettings: () -> Unit) { Column(Modifier.fillMaxSize().padding(top = 54.dp)) { Text("09:41", color = Ink, fontSize = 58.sp, fontWeight = FontWeight.Light, letterSpacing = (-3).sp); Text("Thursday, 23 October", color = Green); Spacer(Modifier.height(22.dp)); InfoCard("ALPINE WEATHER", "18°  ☼", "Clear sky · Da Lat, VN"); InfoCard("THIS WEEK · TRAIL RUNNING", "24.8 km", "684 m elevation  •  5:42 /km"); Spacer(Modifier.height(18.dp)); Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(12.dp)) { listOf("◉","✦","◌","⌕").forEach { Text(it, Modifier.weight(1f).background(Pale, RoundedCornerShape(18.dp)).padding(vertical = 16.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontSize = 22.sp, color = Green) } }; Spacer(Modifier.weight(1f)); Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp)) { SmallAction("Apps", openDrawer); SmallAction("Run", openDashboard); SmallAction("Settings", openSettings) }; Spacer(Modifier.height(20.dp)) } }
+@Composable private fun SmallAction(label: String, action: () -> Unit) { OutlinedButton(onClick = action, shape = RoundedCornerShape(50), modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 4.dp)) { Text(label, fontSize = 12.sp) } }
+@Composable private fun InfoCard(label: String, value: String, detail: String) { Card(Modifier.fillMaxWidth().padding(bottom = 10.dp), shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = Pale)) { Column(Modifier.padding(16.dp)) { Text(label, color = Green, fontSize = 11.sp, fontWeight = FontWeight.Bold); Text(value, color = Ink, fontSize = 25.sp, fontWeight = FontWeight.Medium); Text(detail, color = Green, fontSize = 12.sp) } } }
+@Composable private fun AppDrawer(back: () -> Unit) { val context = LocalContext.current; var query by remember { mutableStateOf("") }; val apps = remember { val pm = context.packageManager; pm.getInstalledApplications(PackageManager.GET_META_DATA).map { AppEntry(pm.getApplicationLabel(it).toString(), it.packageName) }.filter { it.packageName != context.packageName }.sortedBy { it.label.lowercase() } }; val shown = apps.filter { it.label.contains(query, true) }; Column(Modifier.fillMaxSize().padding(top = 34.dp)) { Text("APP LIBRARY", color = Green, fontSize = 12.sp, fontWeight = FontWeight.Bold); OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth().padding(vertical = 14.dp), placeholder = { Text("Search apps") }, singleLine = true, shape = RoundedCornerShape(18.dp)); LazyColumn { items(shown) { app -> Row(Modifier.fillMaxWidth().clickable { context.startActivity(context.packageManager.getLaunchIntentForPackage(app.packageName)) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) { Text(app.label.take(1).uppercase(), Modifier.size(42.dp).background(Pale, RoundedCornerShape(14.dp)).wrapContentSize(Alignment.Center), color = Green, fontWeight = FontWeight.Bold); Text(app.label, Modifier.padding(start = 14.dp), color = Ink) } } }; Spacer(Modifier.weight(1f)); OutlinedButton(onClick = back, shape = RoundedCornerShape(50), modifier = Modifier.fillMaxWidth()) { Text("Back to Home") }; Spacer(Modifier.height(20.dp)) } }
+@Composable private fun Dashboard(back: () -> Unit) { Column(Modifier.fillMaxSize().padding(top = 48.dp)) { Text("RUNNING DASHBOARD", color = Green, fontSize = 12.sp, fontWeight = FontWeight.Bold); Text("Every step has a view.", color = Ink, fontSize = 38.sp, lineHeight = 40.sp, fontWeight = FontWeight.Light); Spacer(Modifier.height(24.dp)); Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { Stat("Distance","24.8 km"); Stat("Elevation","684 m"); Stat("Avg pace","5:42") }; Spacer(Modifier.height(24.dp)); Text("Latest activity", color = Green, fontWeight = FontWeight.Bold); Text("Pine Ridge Loop", color = Ink, fontSize = 20.sp); Text("8.4 km  ·  47 min  ·  Today", color = Green); Spacer(Modifier.weight(1f)); OutlinedButton(onClick = back, shape = RoundedCornerShape(50), modifier = Modifier.fillMaxWidth()) { Text("Back to Home") }; Spacer(Modifier.height(20.dp)) } }
+@Composable private fun Stat(label: String, value: String) { Column(Modifier.background(Pale, RoundedCornerShape(18.dp)).padding(14.dp).width(86.dp)) { Text(label, color = Green, fontSize = 11.sp); Text(value, color = Ink, fontSize = 19.sp, fontWeight = FontWeight.Bold) } }
+@Composable private fun SettingsScreen(back: () -> Unit) { Column(Modifier.fillMaxSize().padding(top = 48.dp)) { Text("LAUNCHER SETTINGS", color = Green, fontSize = 12.sp, fontWeight = FontWeight.Bold); Text("Make it yours.", color = Ink, fontSize = 40.sp, fontWeight = FontWeight.Light); Spacer(Modifier.height(24.dp)); SettingRow("Wallpaper", "Alpine Light wallpaper"); SettingRow("Glass intensity", "Soft"); SettingRow("Running widget", "Enabled"); SettingRow("Floating activity", "Permission required"); Spacer(Modifier.weight(1f)); OutlinedButton(onClick = back, shape = RoundedCornerShape(50), modifier = Modifier.fillMaxWidth()) { Text("Back to Home") }; Spacer(Modifier.height(20.dp)) } }
+@Composable private fun SettingRow(title: String, value: String) { Row(Modifier.fillMaxWidth().background(Pale, RoundedCornerShape(16.dp)).padding(16.dp), Arrangement.SpaceBetween) { Column { Text(title, color = Ink, fontWeight = FontWeight.SemiBold); Text(value, color = Green, fontSize = 12.sp) }; Text("›", color = Green, fontSize = 24.sp) } }
